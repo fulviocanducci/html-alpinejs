@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+    <script src="/js/uniqid.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.10.5/dist/cdn.min.js"></script>
+    <style>
+      [x-cloak] {
+        display: none !important;
+      }
+    </style>
+    <title>Document</title>
+  </head>
+  <body>
+    <div x-data="app" class="container mb-2 mt-2 x-cloak" x-cloak>
+      <div class="form-group">
+        <label class="form-label mb-0" for="title">Digite a tarefa:</label>
+        <input type="text" x-model="title" id="title" class="form-control form-control-sm" x-ref="refTitle" autofocus/>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-2 mt-2">
+          <button class="btn btn-primary btn-sm w-100" @click="addItem" x-bind:disabled="title.length === 0">
+            <i class="bi bi-calendar-plus"></i>
+            Incluir
+          </button>
+        </div>
+        <div class="col-md-6 mb-2 mt-2">
+          <button class="btn btn-success btn-sm w-100" @click="refreshItems">
+            <i class="bi bi-arrow-repeat" x-show="loading === false"></i>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" x-show="loading"></span>
+            <span x-show="loading">Atualizando</span>
+            <span x-show="loading === false">Atualizar</span>
+          </button>
+        </div>
+      </div>
+      <div class="mt-2 mb-2">
+        <div x-text="'Total de ' + (items.length > 0 ? 'itens' : 'item') + ': ' + items.length"></div>
+        <ul class="list-group">
+          <template x-for="item in items">
+            <li class="list-group-item">
+              <button class="btn btn-danger btn-sm" @click="removeItem(item)">
+                <i class="bi bi-trash"></i>
+              </button>
+              <span x-text="item.title"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('alpine:init', function () {
+        Alpine.data('app', function () {
+          return {
+            loading: false,
+            title: '',
+            items: [],
+            storageAddOrUpdate() {
+              localStorage.removeItem('@data');
+              localStorage.setItem('@data', JSON.stringify(this.items));
+            },
+            storageItems() {
+              const items = localStorage.getItem('@data');
+              if (items) {
+                this.items = JSON.parse(items);
+              }
+            },
+            addItem() {
+              if (this.title && this.title.length > 0) {
+                this.items.push({id: uniqid(), title: this.title});
+                this.title = '';
+                this.$refs.refTitle.focus();
+                this.storageAddOrUpdate();
+              }
+            },
+            removeItem(item) {
+              this.items = this.items.filter(function (it) {
+                return it.id !== item.id;
+              });
+              this.storageAddOrUpdate();
+            },
+            refreshItems() {
+              this.title = '';
+              this.loading = true;
+              this.items = [];
+              window.setTimeout(function () {
+                this.storageItems();
+                this.loading = false;
+                this.$refs.refTitle.focus();
+              }.bind(this), 1000);
+            },
+            init() {
+              this.refreshItems();
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
